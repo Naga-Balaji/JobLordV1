@@ -163,8 +163,8 @@ to 60. No agent code changes.
 ## 8. Build Order
 
 1. Subagent prompt template (shared skeleton + platform-brief injection) — build once, reuse 7×
-2. Prove end-to-end on **Indeed** (no login): search → filter → score → draft → JSON
-3. Add Wellfound + HN + ATS portals (all plain fetch)
-4. Add browser-auth platforms: LinkedIn, Naukri, Instahyre
+2. Prove end-to-end on **Indeed** via direct http fetch: fetch → filter → score → draft → JSON
+3. Add Wellfound + YC + HN + ATS portals (all direct fetch first)
+4. Wire the **Apify fallback** path (call-actor → get-dataset) for platforms where direct is blocked — expected on LinkedIn, Naukri (see ways.md "Access ladder")
 5. Orchestrator fan-in: dedupe, rank, resume finalize (LaTeX→PDF), tracker writer
 6. Memory (applied_log.json) + 21:30 IST schedule + digest

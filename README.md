@@ -80,7 +80,7 @@ SEARCH → FILTER → ENRICH → SCORE → GATE (≥70) → TAILOR → RETURN
 | [job_agent_orchestration.md](job_agent_orchestration.md) | Full orchestration design (v2): fan-out/fan-in, subagent contract, resume two-stage generation, build order. |
 | [knowledge_base.md](knowledge_base.md) | **The candidate** — identity, positioning, resume-variant router, scoring reference, and resume-tailoring source. |
 | [ways.md](ways.md) | **Platforms + access methods** — sliced per-platform into subagent briefs. |
-| [rules.md](rules.md) | **Hard filters** — freshness, experience band, employment type, location logic, role keywords, stack exclusions, scoring adjustments, browser-platform conduct, and schedule. |
+| [rules.md](rules.md) | **Hard filters** — freshness, experience band, employment type, location logic, role keywords, stack exclusions, scoring adjustments, data-access conduct (direct-first, Apify fallback), and schedule. |
 | [Job Hunt Tracker (standalone).html](Job%20Hunt%20Tracker%20(standalone).html) | Standalone dashboard that reads/writes `tracker.json` (tabs: Easy Apply · Direct/Company · Applied Log). |
 | [Balaji_AI_Enhanced_Full_Stack_Resume_Updated.tex](Balaji_AI_Enhanced_Full_Stack_Resume_Updated.tex) | LaTeX resume template used to compile tailored PDFs. |
 
@@ -124,7 +124,7 @@ Each `tracker.json` job entry uses a fixed schema (`key`, `company`, `role`, `pl
 
 - **Never auto-submit** an application, Easy Apply, message, or connection request — the human applies, always.
 - **Never invent resume content** not present in `knowledge_base.md`; tailoring may reorder and rephrase, never fabricate.
-- Browser platforms (LinkedIn / Naukri / Instahyre / Hirect) are **read-only**, human-paced, and hard-capped per run; abort on any CAPTCHA, security warning, or forced re-login. See the "Browser-platform conduct" section of [rules.md](rules.md).
+- Platform access is **direct-first**: plain HTTP fetch / public APIs (ATS JSON, hn.algolia.com) are tried first, with the **Apify connector** (scraper Actors over managed proxies) as the fallback only when direct is blocked — no browser login, no candidate accounts touched. Access is **read-only** and result-capped per run; on fallback error or missing connector, the platform is skipped and noted in the digest — never a browser-login fallback. See the "Data-access conduct" section of [rules.md](rules.md).
 - A platform failing is a digest note, not a run failure.
 
 ---

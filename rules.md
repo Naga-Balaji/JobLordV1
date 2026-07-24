@@ -2,21 +2,22 @@
 <!-- Machine-readable. Phase 2 applies these mechanically. Edit here, never in agent code. -->
 <!-- Finalized: 2026-07-22, from Balaji's answers. Platform detail lives in ways.md. -->
 
-## Platforms (priority order — see ways.md for access methods)
+## Platforms (priority order — see ways.md "Access ladder" for full detail)
+<!-- Policy: try DIRECT (http fetch / public API) first; fall back to Apify only if direct fails. No browser login. -->
 ### Tier 1 — volume
-1. LinkedIn        — browser (logged in) — Easy Apply preferred; tag easy_apply vs external
-2. Naukri          — browser (logged in) — also keep profile fresh (recruiter DB ranking)
-3. Instahyre       — browser (logged in)
-4. Wellfound       — http fetch
-5. Indeed          — http fetch — reliable fallback
+1. LinkedIn        — direct fetch → Apify fallback `cheap_scraper/linkedin-job-scraper` (then `curious_coder/linkedin-jobs-scraper`) — Easy Apply preferred; tag easy_apply vs external
+2. Naukri          — direct fetch → Apify fallback `muhammetakkurtt/naukri-job-scraper`
+3. Instahyre       — no direct listing, no actor → skip (note "skipped (no access)"); optional `lenient_grove/Daily-Job-Pulse`
+4. Wellfound       — direct http fetch → Apify fallback `crawlerbros/wellfound-scraper`
+5. Indeed          — direct http fetch (workhorse) → Apify fallback `borderline/indeed-scraper`
 ### Tier 2 — low footfall (check every run)
-6. YC Work at a Startup — http fetch
-7. Peerlist Jobs        — http fetch
-8. HN "Who is hiring"   — http fetch (hn.algolia.com API), filter REMOTE + junior-friendly
-9. Cutshort             — http fetch
-10. Hirect              — browser/manual
+6. YC Work at a Startup — direct http fetch → Apify fallback `parsebird/yc-jobs-scraper`
+7. Peerlist Jobs        — http fetch (direct)
+8. HN "Who is hiring"   — http fetch (hn.algolia.com API, direct), filter REMOTE + junior-friendly
+9. Cutshort             — http fetch (direct)
+10. Hirect              — no actor / mobile-only → out of scope (manual only)
 ### Always — zero footfall
-11. Company career portals / ATS APIs (Greenhouse, Lever, Ashby) — target list below + X-ray discovery
+11. Company career portals / ATS APIs (Greenhouse, Lever, Ashby) — http fetch (direct) — target list below + X-ray discovery
 
 ## Freshness
 - posted_within_days: 7          # hard drop if older
@@ -68,26 +69,27 @@
 - +5 explicit "AI tools / GenAI / Cursor / Copilot" mention in JD (edge match)
 - -5 service/consulting body-shop indicators ("client deployment", "bench")
 
-## Browser-platform conduct (LinkedIn / Naukri / Instahyre / Hirect — cautious agent rules)
-<!-- These platforms run through the user's REAL logged-in browser session. Protect the account above all. -->
+## Data-access conduct (direct-first, Apify fallback — no browser login)
+<!-- Try direct http/API first. Apify Actors (managed proxies) are the fallback. No accounts/cookies/sessions touched. -->
+### Access order (per platform, every run)
+- TRY DIRECT FIRST: plain http fetch of public listing pages / public APIs (ATS JSON, hn.algolia.com). Free, no per-result cost.
+- FALL BACK TO APIFY only when direct is blocked (anti-bot / JS-gated), returns empty, or errors.
+- Never invoke Apify for a platform whose direct fetch already succeeded.
 ### Hard boundaries (never, regardless of anything)
-- READ-ONLY by default: search listings, open postings, read JDs. Nothing else.
-- NEVER submit an application, Easy Apply, or any form — human applies, always
-- NEVER send messages, connection requests, InMails, or founder chats
-- NEVER change account settings, visibility, preferences, or notification options
-- NEVER edit profile content (exception below), upload files, or delete anything
-- NEVER interact with posts: no likes, comments, follows, endorsements
-### Pacing (look human, stay under radar)
-- Max 1 browser platform per run session; 3-6 seconds between page loads
-- Max ~15 search-result pages and ~10 job-detail opens per platform per run
+- READ-ONLY: fetch listings + JDs. Nothing else.
+- NEVER submit an application, Easy Apply, message, connection request, or any form — human applies, always
+- NEVER use browser login, or run an Actor that logs into / posts to / writes to any platform or the candidate's accounts
+- NEVER store or pass the candidate's platform credentials to an Actor
+### Run limits (keep cost + noise bounded)
+- Direct fetch: reasonable page/JD caps per platform per run (~15 result pages, ~10 JD opens)
+- Apify fallback: bound every Actor (maxJobs / maxRows / maxItems ~50–100 per platform); prefer pay-per-result; abort runaway runs
 - One run per day per platform — never re-poll within the same day
-- Use the platform's own URL filters (date/experience/Easy-Apply) instead of clicking through UI repeatedly
-### Abort conditions (stop immediately, log, report in digest — do NOT retry)
-- CAPTCHA or verification challenge appears -> abort platform, flag "manual login check needed"
-- Any security warning, unusual-activity notice, or forced re-login -> abort ALL browser platforms this run
-- Logged-out state -> skip platform, note in digest; never attempt to log in or handle credentials
-### Single exception (explicit approval each time)
-- Naukri profile "refresh" (recency boost) is allowed ONLY when the user approves it in that session; agent proposes, human confirms
+- Use each source's own filters (date/experience/work-mode/Easy-Apply) — don't over-fetch then filter
+### Failure handling (a platform failing is a digest note, never a run failure)
+- Direct fetch blocked/empty -> try the Apify fallback (if one exists)
+- Apify fallback errors / times out / returns empty -> return empty list + error note; continue other platforms
+- No actor and no direct access (Instahyre, Hirect) -> skip platform, note "skipped (no access)" in digest
+- Apify connector not authorized / no token -> use direct only; skip platforms that require the fallback, note in digest; never attempt a browser-login fallback
 ### Escalation
 - Anything not covered here defaults to: don't do it, ask the human in the digest
 
