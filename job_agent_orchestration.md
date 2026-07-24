@@ -63,8 +63,8 @@ fans in, dedupes, ranks, and delivers.
    - dedupe against `applied_log.json` (never resurface)
    - re-rank merged list by score, apply rules.md bonuses (+5 Tier 2/company_site, +5 <48h, +5 AI-tooling JD), cap at 20
    - **finalize resumes** for survivors only (see §4 — draft is made in the subagent, PDF compiled here)
-5. Write outputs: tracker.json, `resumes/` folder, digest message
-6. Append every surfaced job to `applied_log.json` with status `surfaced`
+5. Write outputs (paths per JobLord_agent.md → Config): cumulative `tracker.json` at `~/Downloads/JobLord/`; this run's `digest.md` + `resumes/` in `~/Downloads/JobLord/<YYYY-MM-DD>-JobLord/`
+6. Append every surfaced job to `~/Downloads/JobLord/applied_log.json` with status `surfaced`
 
 ## 2. Platform Subagent (spec — identical logic, different platform brief)
 
